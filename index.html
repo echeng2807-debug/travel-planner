@@ -1,0 +1,159 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 旅行规划师</title>
+<style>
+:root{--p:#2563EB;--pl:#DBEAFE;--bg:#F8FAFC;--card:#FFF;--t:#1E293B;--t2:#64748B;--bdr:#E2E8F0;--r:16px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--t);line-height:1.6}
+.ctr{max-width:800px;margin:0 auto;padding:20px}
+.hdr{text-align:center;padding:40px 0 20px}
+.hdr h1{font-size:2rem;color:var(--p)}
+.hdr p{color:var(--t2);margin-top:4px}
+.card{background:var(--card);border-radius:var(--r);padding:28px;box-shadow:0 4px 24px rgba(0,0,0,.06);margin-bottom:20px}
+.card h2{font-size:1.25rem;margin-bottom:8px;color:var(--p)}
+.card .sub{color:var(--t2);font-size:.9rem;margin-bottom:20px}
+.fg{margin-bottom:18px}
+.fg label{display:block;font-weight:600;font-size:.9rem;margin-bottom:6px}
+.fg .hint{font-size:.78rem;color:var(--t2);margin-top:2px}
+input,select,textarea{width:100%;padding:12px 14px;border:2px solid var(--bdr);border-radius:10px;font-size:1rem;font-family:inherit;background:#FAFBFC}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--p);background:#fff}
+textarea{resize:vertical;min-height:60px}
+.ir{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:500px){.ir{grid-template-columns:1fr}}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:12px 28px;border:none;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer;transition:.2s;font-family:inherit}
+.btn-p{background:var(--p);color:#fff}
+.btn-p:hover{background:#1D4ED8;transform:translateY(-1px)}
+.btn-p:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.btn-o{background:var(--card);color:var(--p);border:2px solid var(--p)}
+.btn-o:hover{background:var(--pl)}
+.btn-sm{padding:8px 16px;font-size:.85rem}
+.btn-r{display:flex;gap:10px;margin-top:20px;justify-content:space-between;flex-wrap:wrap}
+.tags{display:flex;flex-wrap:wrap;gap:8px}
+.tag{padding:8px 16px;border:2px solid var(--bdr);border-radius:20px;font-size:.85rem;cursor:pointer;transition:.2s;user-select:none;background:#fff}
+.tag:hover{border-color:var(--p)}
+.tag.sel{background:var(--p);color:#fff;border-color:var(--p)}
+.alist{display:flex;flex-direction:column;gap:8px}
+.arow{display:flex;gap:8px;align-items:center}
+.arow input{flex:1}
+.hidden{display:none!important}
+.spin{display:none;width:40px;height:40px;border:4px solid var(--bdr);border-top-color:var(--p);border-radius:50%;animation:spin .6s linear infinite;margin:40px auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+.output{background:var(--card);border-radius:var(--r);padding:28px;box-shadow:0 4px 24px rgba(0,0,0,.06);line-height:1.8;font-size:.95rem}
+.output h2{color:var(--p);margin:24px 0 12px;font-size:1.3rem;border-bottom:2px solid var(--pl);padding-bottom:6px}
+.output h3{color:#1D4ED8;margin:20px 0 10px;font-size:1.15rem}
+.output h4{margin:16px 0 8px}
+.output table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.9rem}
+.output td,.output th{padding:6px 10px;border:1px solid var(--bdr);text-align:left}
+.output th{background:var(--pl);font-weight:600}
+.output ul,.output ol{padding-left:20px}
+.output li{margin:4px 0}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1E293B;color:#fff;padding:12px 24px;border-radius:20px;font-size:.9rem;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="ctr">
+<div class="hdr"><h1>🧳 AI 旅行规划师</h1><p>输入关键信息 · DeepSeek AI 即时生成专业攻略</p></div>
+
+<div class="card">
+<h2>📍 基本信息</h2><p class="sub">告诉我们你的旅行框架</p>
+<div class="fg"><label>🏙️ 目的地城市</label><input type="text" id="city" placeholder="例如：上海、大理、东京、巴黎……"></div>
+<div class="ir"><div class="fg"><label>📅 旅行天数</label><select id="days"><option value="2">2天</option><option value="3" selected>3天</option><option value="4">4天</option><option value="5">5天</option><option value="6">6天</option><option value="7">7天</option></select></div>
+<div class="fg"><label>👥 出行人数</label><select id="ppl"><option value="1">1人</option><option value="2" selected>2人</option><option value="3">3-4人</option><option value="5">5+人</option></select></div></div>
+<div class="ir"><div class="fg"><label>💰 预算</label><select id="budget"><option value="budget">经济实惠</option><option value="comfort" selected>舒适享受</option><option value="luxury">轻奢体验</option></select></div>
+<div class="fg"><label>🎯 节奏</label><select id="pace"><option value="packed">紧凑充实</option><option value="moderate" selected>适中均衡</option><option value="relaxed">轻松悠闲</option></select></div></div>
+<div class="fg"><label>🎨 偏好（多选）</label><div class="tags" id="tags"><span class="tag" data-v="culture">🏛️ 人文历史</span><span class="tag sel" data-v="nature">🌿 自然风光</span><span class="tag" data-v="food">🍜 美食探店</span><span class="tag" data-v="photo">📸 拍照打卡</span><span class="tag" data-v="relax">☕ 休闲放空</span><span class="tag" data-v="hike">🥾 徒步户外</span></div></div>
+
+<h2>⏰ 时间与地点</h2><p class="sub">到达和离开的关键信息</p>
+<div class="ir"><div class="fg"><label>🛬 Day1 到达时间</label><input type="time" id="arrT" value="12:00"></div>
+<div class="fg"><label>📍 到达地点</label><input type="text" id="arrP" placeholder="如：大理机场、上海虹桥站"></div></div>
+<div class="fg"><label>🏨 酒店地址（留空AI推荐最佳区域）</label><input type="text" id="hotel" placeholder="留空则由AI根据预算推荐"></div>
+<div class="ir"><div class="fg"><label>🛫 最后一天离开时间</label><input type="time" id="lvT" value="16:30"></div>
+<div class="fg"><label>📍 离开地点</label><input type="text" id="lvP" placeholder="如：大理机场、上海虹桥站"></div></div>
+<div class="fg"><label>🧳 是否回酒店取行李？</label><select id="lug"><option value="yes" selected>是</option><option value="no">否</option></select></div>
+
+<h2>🎯 必去景点 & 细节</h2><p class="sub">选填，AI会根据偏好智能推荐</p>
+<div class="fg"><label>🗺️ 必去景点</label><div class="alist" id="alist"><div class="arow"><input type="text" placeholder="如：外滩、东方明珠、迪士尼"><button class="btn btn-o btn-sm" id="badd">+ 添加</button></div></div></div>
+<div class="fg"><label>🍽️ 饮食偏好</label><select id="diet"><option value="any" selected>不忌口</option><option value="local">偏好本地特色</option><option value="light">清淡口味</option><option value="spicy">无辣不欢</option><option value="veggie">偏好素食</option></select></div>
+<div class="fg"><label>🔑 其他要求</label><textarea id="extra" placeholder="如：有老人小孩、避开人多、必去网红打卡点……"></textarea></div>
+
+<button class="btn btn-p" id="bgen" style="width:100%;padding:16px;font-size:1.1rem">✨ AI 生成攻略</button>
+</div>
+
+<div class="spin" id="spin"></div>
+<div class="output hidden" id="out"></div>
+<div style="text-align:center;margin:20px;display:none" id="btns">
+  <button class="btn btn-p" onclick="downloadWord()">📥 下载Word</button>
+  <button class="btn btn-o" onclick="window.print()">🖨️ 打印</button>
+  <button class="btn btn-o" onclick="resetForm()">🔄 重新规划</button>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+function $(id){return document.getElementById(id)}
+function toast(m){var t=$("toast");t.textContent=m;t.classList.add("show");setTimeout(function(){t.classList.remove("show")},3000)}
+
+document.querySelectorAll(".tag").forEach(function(t){t.addEventListener("click",function(){this.classList.toggle("sel")})});
+
+var ac=1;
+$("badd").addEventListener("click",function(){ac++;var d=document.createElement("div");d.className="arow";d.innerHTML='<input type="text" placeholder="景点名称"><button class="btn btn-o btn-sm rm">x</button>';$("alist").appendChild(d);d.querySelector(".rm").addEventListener("click",function(){d.remove()})});
+
+$("bgen").addEventListener("click",async function(){
+  var city=$("city").value.trim();
+  if(!city){toast("请输入目的地城市");return}
+  
+  var data={
+    city:city,
+    days:parseInt($("days").value)||3,
+    people:parseInt($("ppl").value)||2,
+    budget:$("budget").value,
+    pace:$("pace").value,
+    arrive_time:$("arrT").value||"12:00",
+    arrive_place:$("arrP").value.trim(),
+    leave_time:$("lvT").value||"16:30",
+    leave_place:$("lvP").value.trim(),
+    hotel:$("hotel").value.trim(),
+    need_luggage:$("lug").value==="yes",
+    diet:$("diet").value,
+    styles:Array.from(document.querySelectorAll("#tags .tag.sel")).map(function(t){return t.dataset.v}),
+    must_visit:Array.from(document.querySelectorAll("#alist input")).map(function(i){return i.value.trim()}).filter(Boolean),
+    extra:$("extra").value.trim()
+  };
+
+  $("bgen").disabled=true;$("bgen").textContent="⏳ AI 正在规划中...";
+  $("spin").style.display="block";$("out").classList.add("hidden");$("btns").style.display="none";
+
+  try{
+    var resp=await fetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
+    var result=await resp.json();
+    if(result.error){toast("❌ "+result.error);$("spin").style.display="none";$("bgen").disabled=false;$("bgen").textContent="✨ AI 生成攻略";return}
+    
+    $("spin").style.display="none";
+    $("out").innerHTML=marked.parse(result.result);
+    $("out").classList.remove("hidden");
+    $("btns").style.display="block";
+    $("bgen").disabled=false;$("bgen").textContent="✨ AI 生成攻略";
+    $("out").scrollIntoView({behavior:"smooth"});
+    toast("✅ 攻略生成完毕！");
+  }catch(e){
+    $("spin").style.display="none";$("bgen").disabled=false;$("bgen").textContent="✨ AI 生成攻略";
+    toast("❌ 网络错误，请确保服务器正在运行");
+    console.error(e);
+  }
+});
+
+function downloadWord(){
+  var hc='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="UTF-8"><style>body{font-family:"Microsoft YaHei",sans-serif;line-height:1.8;padding:20px}h2{color:#2563EB}h3{color:#1D4ED8}table{width:100%;border-collapse:collapse}td,th{padding:4px 8px;border:1px solid #ccc}</style></head><body>'+$("out").innerHTML+'</body></html>';
+  var bl=new Blob(["\ufeff"+hc],{type:"application/msword"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(bl);a.download="旅行攻略.doc";a.click();toast("📥 下载中...")
+}
+
+function resetForm(){$("out").classList.add("hidden");$("out").innerHTML="";$("btns").style.display="none";window.scrollTo({top:0,behavior:"smooth"})}
+</script>
+</body>
+</html>
