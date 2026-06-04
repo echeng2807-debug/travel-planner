@@ -4,7 +4,7 @@ from urllib.parse import parse_qs, urlparse
 from openai import OpenAI
 
 PORT = int(os.environ.get("PORT", 8080))
-DIR = r"D:\AI\kunming"
+DIR = os.path.dirname(os.path.abspath(__file__))
 API_KEY = "sk-f0e67df8d3dc4bef9f9fd3ccdd007ee2"
 
 class Handler(SimpleHTTPRequestHandler):
